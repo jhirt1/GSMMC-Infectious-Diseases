@@ -1,0 +1,44 @@
+outputLocation: "./output/generated-data"
+directory: "./input"
+
+nSim: 100
+tSpan: 365
+populationSize: 10000
+initialInfected: 25
+seed: 42
+
+rho: 0.85
+rcd: 14
+ved: 7
+rimmd: 90
+
+generatorDistribution: binomial
+
+infectionRiskMultipliers:
+  age:
+    0-17: 0.75
+    18-49: 1.0
+    50-64: 1.0
+    65+: 1.25
+
+  comorbidity:
+    "true": 1.25
+    "false": 1.0
+
+  socialActivity:
+    high: 1.25
+    medium: 1.0
+    low: 0.75
+
+  geography:
+    urban: 1.25
+    rural: 1.0
+
+  mobility:
+    independent: 1.25
+    assisted: 1.0
+    immobile: 0.75
+
+  vaccineAcceptance:
+    "true": 0.75
+    "false": 1.0

@@ -3,6 +3,7 @@ $id: https://example.org/schemas/simulation-config.schema.json
 title: Simulation Configuration Schema
 description: Schema describing configuration parameters for running a vaccination and infection simulation.
 type: object
+
 required:
   - outputLocation
   - directory
@@ -14,54 +15,186 @@ required:
   - rho
   - rcd
   - ved
+  - rimmd
   - generatorDistribution
+  - infectionRiskMultipliers
+
 properties:
   outputLocation:
     type: string
     description: Directory where the generated simulation data will be stored.
+
   directory:
     type: string
     description: Directory where the generator will look for files, if needed.
+
   nSim:
     type: integer
     description: Number of iterations for the simulation to run.
     minimum: 1
+
   tSpan:
     type: integer
     description: Time span for each epoch.
     minimum: 1
+
   populationSize:
     type: integer
     description: Total number of individuals in the simulation.
     minimum: 1
+
   initialInfected:
     type: integer
     description: Initial number of infected individuals at the start of the simulation.
     minimum: 0
+
   seed:
     type: integer
     description: Random seed used for reproducibility.
+
   rho:
     type: number
     description: Population density.
     minimum: 0
+
   rcd:
     type: integer
     description: Number of days required to recover from infection.
     minimum: 0
+
   ved:
     type: integer
     description: Vaccine efficacy delay in days.
     minimum: 0
+
   rimmd:
     type: integer
     description: Number of days of immunity after recovery.
     minimum: 0
+
   generatorDistribution:
     type: string
     description: Distribution type used for generating individual attributes.
     enum:
       - binomial
+
+  infectionRiskMultipliers:
+    type: object
+    description: Relative risk multipliers used to modify the baseline probability of infection according to static individual attributes. A value of 1.0 represents the reference condition, 0.75 represents reduced relative risk, and 1.25 represents increased relative risk.
+    required:
+      - age
+      - comorbidity
+      - socialActivity
+      - geography
+      - mobility
+      - vaccineAcceptance
+    properties:
+      age:
+        type: object
+        description: Infection risk multipliers by age group.
+        required:
+          - 0-17
+          - 18-49
+          - 50-64
+          - 65+
+        properties:
+          0-17:
+            type: number
+            enum: [0.75, 1.0, 1.25]
+          18-49:
+            type: number
+            enum: [0.75, 1.0, 1.25]
+          50-64:
+            type: number
+            enum: [0.75, 1.0, 1.25]
+          65+:
+            type: number
+            enum: [0.75, 1.0, 1.25]
+        additionalProperties: false
+
+      comorbidity:
+        type: object
+        description: Infection risk multipliers based on whether the individual has one or more comorbidities.
+        required:
+          - "true"
+          - "false"
+        properties:
+          "true":
+            type: number
+            enum: [0.75, 1.0, 1.25]
+          "false":
+            type: number
+            enum: [0.75, 1.0, 1.25]
+        additionalProperties: false
+
+      socialActivity:
+        type: object
+        description: Infection risk multipliers by level of social activity.
+        required:
+          - high
+          - medium
+          - low
+        properties:
+          high:
+            type: number
+            enum: [0.75, 1.0, 1.25]
+          medium:
+            type: number
+            enum: [0.75, 1.0, 1.25]
+          low:
+            type: number
+            enum: [0.75, 1.0, 1.25]
+        additionalProperties: false
+
+      geography:
+        type: object
+        description: Infection risk multipliers by geographic setting.
+        required:
+          - urban
+          - rural
+        properties:
+          urban:
+            type: number
+            enum: [0.75, 1.0, 1.25]
+          rural:
+            type: number
+            enum: [0.75, 1.0, 1.25]
+        additionalProperties: false
+
+      mobility:
+        type: object
+        description: Infection risk multipliers by mobility status.
+        required:
+          - independent
+          - assisted
+          - immobile
+        properties:
+          independent:
+            type: number
+            enum: [0.75, 1.0, 1.25]
+          assisted:
+            type: number
+            enum: [0.75, 1.0, 1.25]
+          immobile:
+            type: number
+            enum: [0.75, 1.0, 1.25]
+        additionalProperties: false
+
+      vaccineAcceptance:
+        type: object
+        description: Infection risk multipliers based on whether the individual is willing to accept vaccination.
+        required:
+          - "true"
+          - "false"
+        properties:
+          "true":
+            type: number
+            enum: [0.75, 1.0, 1.25]
+          "false":
+            type: number
+            enum: [0.75, 1.0, 1.25]
+        additionalProperties: false
+
+    additionalProperties: false
+
 additionalProperties: false
-
-

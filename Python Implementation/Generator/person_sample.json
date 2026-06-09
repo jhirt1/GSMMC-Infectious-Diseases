@@ -1,0 +1,23 @@
+{
+  "static": {
+    "guid": "8f14e45f-ea9f-4a3b-9b5a-2c8f6f9e7d21",
+    "age": "65+",
+    "comorbidity": true,
+    "socialActivity": "medium",
+    "geography": "urban",
+    "mobility": "independent",
+    "vaccineAcceptance": true
+  },
+  "dynamic": {
+    "vaccineStatus": false,
+    "proactiveVaccine": false,
+    "numberOfInfections": 0,
+    "sirvStatus": "S",
+    "infectedDays": 0,
+    "vaccinatedDays": 0,
+    "currentLocation": {
+      "xcor": 42.75,
+      "ycor": 18.25
+    }
+  }
+}
