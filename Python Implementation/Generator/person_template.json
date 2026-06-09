@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/schemas/person-vaccine-sirv.schema.json",
+  "title": "Person Vaccine and SIRV Status Schema",
+  "description": "Schema describing static and dynamic attributes for an individual in a vaccination and infection simulation model.",
+  "type": "object",
+  "required": ["static", "dynamic"],
+  "properties": {
+    "static": {
+      "type": "object",
+      "description": "Static demographic, geographic, and behavioral characteristics.",
+      "required": [
+        "guid",
+        "age",
+        "comorbidity",
+        "socialActivity",
+        "geography",
+        "mobility",
+        "vaccineAcceptance"
+      ],
+      "properties": {
+        "guid": {
+          "type": "string",
+          "description": "Unique identifier for the individual."
+        },
+        "age": {
+          "type": "string",
+          "description": "Age range of the individual.",
+          "enum": ["0-17", "18-49", "50-64", "65+"]
+        },
+        "comorbidity": {
+          "type": "boolean",
+          "description": "Indicates whether the individual has one or more comorbidities."
+        },
+        "socialActivity": {
+          "type": "string",
+          "description": "General level of social activity.",
+          "enum": ["high", "medium", "low"]
+        },
+        "geography": {
+          "type": "string",
+          "description": "Geographic setting of the individual.",
+          "enum": ["urban", "rural"]
+        },
+        "mobility": {
+          "type": "string",
+          "description": "Mobility status of the individual.",
+          "enum": ["independent", "assisted", "immobile"]
+        },
+        "vaccineAcceptance": {
+          "type": "boolean",
+          "description": "Indicates whether the individual is willing to accept vaccination."
+        }
+      },
+      "additionalProperties": false
+    },
+    "dynamic": {
+      "type": "object",
+      "description": "Dynamic health and vaccination status variables that may change over time.",
+      "required": [
+        "vaccineStatus",
+        "proactiveVaccine",
+        "numberOfInfections",
+        "sirvStatus",
+        "infectedDays",
+        "vaccinatedDays"
+      ],
+      "properties": {
+        "vaccineStatus": {
+          "type": "boolean",
+          "description": "Indicates whether the individual is currently vaccinated."
+        },
+        "proactiveVaccine": {
+          "type": "boolean",
+          "description": "Indicates whether the individual proactively received a vaccination."
+        },
+        "numberOfInfections": {
+          "type": "integer",
+          "description": "Total number of infections experienced by the individual.",
+          "minimum": 0
+        },
+        "sirvStatus": {
+          "type": "string",
+          "description": "Current SIRV status of the individual: susceptible, infected, recovered, or vaccinated.",
+          "enum": ["S", "I", "R", "V"]
+        },
+        "infectedDays": {
+          "type": "integer",
+          "description": "Number of days the individual has been infected.",
+          "minimum": 0
+        },
+        "vaccinatedDays": {
+          "type": "integer",
+          "description": "Number of days since the individual was vaccinated.",
+          "minimum": 0
+        },
+        "recoveredDays": {
+          "type": "integer",
+          "description": "Number of days since the individual recovered from infection.",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

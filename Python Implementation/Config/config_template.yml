@@ -1,0 +1,67 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://example.org/schemas/simulation-config.schema.json
+title: Simulation Configuration Schema
+description: Schema describing configuration parameters for running a vaccination and infection simulation.
+type: object
+required:
+  - outputLocation
+  - directory
+  - nSim
+  - tSpan
+  - populationSize
+  - initialInfected
+  - seed
+  - rho
+  - rcd
+  - ved
+  - generatorDistribution
+properties:
+  outputLocation:
+    type: string
+    description: Directory where the generated simulation data will be stored.
+  directory:
+    type: string
+    description: Directory where the generator will look for files, if needed.
+  nSim:
+    type: integer
+    description: Number of iterations for the simulation to run.
+    minimum: 1
+  tSpan:
+    type: integer
+    description: Time span for each epoch.
+    minimum: 1
+  populationSize:
+    type: integer
+    description: Total number of individuals in the simulation.
+    minimum: 1
+  initialInfected:
+    type: integer
+    description: Initial number of infected individuals at the start of the simulation.
+    minimum: 0
+  seed:
+    type: integer
+    description: Random seed used for reproducibility.
+  rho:
+    type: number
+    description: Population density.
+    minimum: 0
+  rcd:
+    type: integer
+    description: Number of days required to recover from infection.
+    minimum: 0
+  ved:
+    type: integer
+    description: Vaccine efficacy delay in days.
+    minimum: 0
+  rimmd:
+    type: integer
+    description: Number of days of immunity after recovery.
+    minimum: 0
+  generatorDistribution:
+    type: string
+    description: Distribution type used for generating individual attributes.
+    enum:
+      - binomial
+additionalProperties: false
+
+
