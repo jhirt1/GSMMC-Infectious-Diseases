@@ -10,7 +10,9 @@ seed: 12345
 sig2: 1.0
 rcd: 14
 ved: 7
+vid: 20
 rimmd: 180
+rho: 0.5
 
 generatorDistribution: configured
 

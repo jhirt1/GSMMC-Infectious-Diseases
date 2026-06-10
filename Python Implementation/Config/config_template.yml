@@ -68,6 +68,11 @@ properties:
     description: Vaccine efficacy delay in days.
     minimum: 0
 
+  vid:
+    type: integer
+    description: Vaccine efficacy with infection immunity delay in days.
+    minimum: 0
+
   rimmd:
     type: integer
     description: Number of days of immunity after recovery.
