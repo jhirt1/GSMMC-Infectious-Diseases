@@ -26,19 +26,25 @@ def update_disease_counters(df: pd.DataFrame) -> pd.DataFrame:
 def run_sirv_simulation(n_runs: int, m_steps: int):
 
     config = generator.read_config("../Config/config_sample.yml")
+    df = generator.intialization()
 
     all_runs = []
-
+    
     for run_id in range(n_runs):
 
         print(f"\n=== RUN {run_id + 1}/{n_runs} ===")
 
-        df = generator.intialization()
-
         rng = np.random.default_rng(config["seed"] + run_id)
 
-        run_history = []
-
+        run_history = [{
+                "run": run_id,
+                "t": 0,
+                "S": (df["dynamic.sirvStatus"] == "S").sum(),
+                "I": (df["dynamic.sirvStatus"] == "I").sum(),
+                "R": (df["dynamic.sirvStatus"] == "R").sum(),
+                "V": (df["dynamic.sirvStatus"] == "V").sum(),
+            }]
+       
         for t in range(m_steps):
             # movement
             df = generator.jiggle_positions(
@@ -61,7 +67,7 @@ def run_sirv_simulation(n_runs: int, m_steps: int):
             # snapshot
             summary = {
                 "run": run_id,
-                "t": t,
+                "t": t+1,
                 "S": (df["dynamic.sirvStatus"] == "S").sum(),
                 "I": (df["dynamic.sirvStatus"] == "I").sum(),
                 "R": (df["dynamic.sirvStatus"] == "R").sum(),
