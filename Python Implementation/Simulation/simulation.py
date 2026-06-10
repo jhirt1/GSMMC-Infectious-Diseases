@@ -61,7 +61,7 @@ def run_sirv_simulation(n_runs: int, m_steps: int):
             df = reactions.infected_to_recovered(df, config["rcd"])
             df = reactions.recovered_to_susceptible(df, config["sd"])
             df = reactions.vaccinated_to_susceptible(df, config["ved"])
-            df = reactions.susceptible_to_vaccinated(df, base_prob=0.005, rng=rng)
+            df = reactions.susceptible_to_vaccinated(df, target_fraction=0.57, n_days=180, rng=rng)
 
             # update counters
             df = update_disease_counters(df)
