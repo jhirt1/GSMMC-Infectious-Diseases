@@ -36,6 +36,8 @@ def run_sirv_simulation(n_runs: int, m_steps: int):
 
         rng = np.random.default_rng(config["seed"] + run_id)
 
+        df = df_init
+
         run_history = [{
                 "run": run_id,
                 "t": 0,
@@ -44,8 +46,6 @@ def run_sirv_simulation(n_runs: int, m_steps: int):
                 "R": (df["dynamic.sirvStatus"] == "R").sum(),
                 "V": (df["dynamic.sirvStatus"] == "V").sum(),
             }]
-           
-        df = df_init
 
         for t in range(m_steps):
             # movement
