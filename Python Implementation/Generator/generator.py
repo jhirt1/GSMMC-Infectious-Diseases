@@ -270,8 +270,8 @@ def setup():
     global config, schema, schema_columns, schema_df, data_df, rng, infection_risk_multipliers
 
     # Load configuration and schema
-    config = read_config("./Config/config_sample.yml")
-    schema = load_json_schema("./Generator/person_template.json")
+    config = read_config("../Config/config_sample.yml")
+    schema = load_json_schema("../Generator/person_template.json")
 
     # Flatten the JSON schema into a list of column metadata
     schema_columns = flatten_json_schema(schema)
