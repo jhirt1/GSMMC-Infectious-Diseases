@@ -43,29 +43,29 @@ syntheticPopulation:
 
 infectionRiskMultipliers:
   age:
-    "0-17": 0.75
-    "18-49": 1.0
-    "50-64": 1.0
-    "65+": 1.25
+    "0-17": 0.5
+    "18-49": 0.75
+    "50-64": 0.75
+    "65+": 1.00
 
   comorbidity:
-    "true": 1.25
-    "false": 1.0
+    "true": 1.0
+    "false": 0.5
 
   socialActivity:
-    high: 1.25
-    medium: 1.0
-    low: 0.75
+    high: 1.00
+    medium: 0.75
+    low: 0.5
 
   geography:
-    urban: 1.25
-    rural: 1.0
+    urban: 1.0
+    rural: 0.5
 
   mobility:
     independent: 1.0
-    assisted: 1.0
-    immobile: 0.75
+    assisted: 0.75
+    immobile: 0.5
 
   vaccineAcceptance:
-    "true": 0.75
+    "true": 0.5
     "false": 1.0
