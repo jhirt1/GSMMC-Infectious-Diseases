@@ -17,6 +17,7 @@ required:
   - ved
   - rimmd
   - generatorDistribution
+  - syntheticPopulation
   - infectionRiskMultipliers
 
 properties:
@@ -74,9 +75,154 @@ properties:
 
   generatorDistribution:
     type: string
-    description: Distribution type used for generating individual attributes.
+    description: Distribution strategy used for generating synthetic individual attributes. The configured option indicates that field-level sampling assumptions are defined in syntheticPopulation.
     enum:
-      - binomial
+      - configured
+
+  syntheticPopulation:
+    type: object
+    description: Explicit sampling assumptions used to generate static, schema-valid synthetic individuals. Dynamic disease, vaccination, recovery, and location states are computed by the simulation model rather than sampled here.
+    required:
+      - static
+    properties:
+      static:
+        type: object
+        description: Sampling assumptions for static individual attributes.
+        required:
+          - age
+          - comorbidity
+          - socialActivity
+          - geography
+          - mobility
+          - vaccineAcceptance
+        properties:
+          age:
+            type: object
+            description: Sampling weights for individual age groups.
+            required:
+              - categories
+              - weights
+            properties:
+              categories:
+                type: array
+                items:
+                  type: string
+                  enum: ["0-17", "18-49", "50-64", "65+"]
+                minItems: 4
+                maxItems: 4
+                uniqueItems: true
+              weights:
+                type: array
+                items:
+                  type: number
+                  minimum: 0
+                  maximum: 1
+                minItems: 4
+                maxItems: 4
+            additionalProperties: false
+
+          comorbidity:
+            type: object
+            description: Probability that an individual has one or more comorbidities.
+            required:
+              - probabilityTrue
+            properties:
+              probabilityTrue:
+                type: number
+                minimum: 0
+                maximum: 1
+            additionalProperties: false
+
+          socialActivity:
+            type: object
+            description: Sampling weights for level of social activity.
+            required:
+              - categories
+              - weights
+            properties:
+              categories:
+                type: array
+                items:
+                  type: string
+                  enum: ["high", "medium", "low"]
+                minItems: 3
+                maxItems: 3
+                uniqueItems: true
+              weights:
+                type: array
+                items:
+                  type: number
+                  minimum: 0
+                  maximum: 1
+                minItems: 3
+                maxItems: 3
+            additionalProperties: false
+
+          geography:
+            type: object
+            description: Sampling weights for geographic setting.
+            required:
+              - categories
+              - weights
+            properties:
+              categories:
+                type: array
+                items:
+                  type: string
+                  enum: ["urban", "rural"]
+                minItems: 2
+                maxItems: 2
+                uniqueItems: true
+              weights:
+                type: array
+                items:
+                  type: number
+                  minimum: 0
+                  maximum: 1
+                minItems: 2
+                maxItems: 2
+            additionalProperties: false
+
+          mobility:
+            type: object
+            description: Sampling weights for mobility status.
+            required:
+              - categories
+              - weights
+            properties:
+              categories:
+                type: array
+                items:
+                  type: string
+                  enum: ["independent", "assisted", "immobile"]
+                minItems: 3
+                maxItems: 3
+                uniqueItems: true
+              weights:
+                type: array
+                items:
+                  type: number
+                  minimum: 0
+                  maximum: 1
+                minItems: 3
+                maxItems: 3
+            additionalProperties: false
+
+          vaccineAcceptance:
+            type: object
+            description: Probability that an individual is willing to accept vaccination.
+            required:
+              - probabilityTrue
+            properties:
+              probabilityTrue:
+                type: number
+                minimum: 0
+                maximum: 1
+            additionalProperties: false
+
+        additionalProperties: false
+
+    additionalProperties: false
 
   infectionRiskMultipliers:
     type: object
@@ -93,21 +239,21 @@ properties:
         type: object
         description: Infection risk multipliers by age group.
         required:
-          - 0-17
-          - 18-49
-          - 50-64
-          - 65+
+          - "0-17"
+          - "18-49"
+          - "50-64"
+          - "65+"
         properties:
-          0-17:
+          "0-17":
             type: number
             enum: [0.75, 1.0, 1.25]
-          18-49:
+          "18-49":
             type: number
             enum: [0.75, 1.0, 1.25]
-          50-64:
+          "50-64":
             type: number
             enum: [0.75, 1.0, 1.25]
-          65+:
+          "65+":
             type: number
             enum: [0.75, 1.0, 1.25]
         additionalProperties: false

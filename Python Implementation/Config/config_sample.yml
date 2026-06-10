@@ -1,25 +1,49 @@
-outputLocation: "./output/generated-data"
-directory: "./input"
+outputLocation: ./output
+directory: ./data
 
 nSim: 100
 tSpan: 365
-populationSize: 10000
-initialInfected: 25
-seed: 42
+populationSize: 1000
+initialInfected: 10
+seed: 12345
 
-rho: 0.85
+sig2: 1.0
 rcd: 14
 ved: 7
-rimmd: 90
+rimmd: 180
 
-generatorDistribution: binomial
+generatorDistribution: configured
+
+syntheticPopulation:
+  static:
+    age:
+      categories: ["0-17", "18-49", "50-64", "65+"]
+      weights: [0.22, 0.45, 0.20, 0.13]
+
+    comorbidity:
+      probabilityTrue: 0.25
+
+    socialActivity:
+      categories: ["high", "medium", "low"]
+      weights: [0.25, 0.50, 0.25]
+
+    geography:
+      categories: ["urban", "rural"]
+      weights: [0.80, 0.20]
+
+    mobility:
+      categories: ["independent", "assisted", "immobile"]
+      weights: [0.85, 0.12, 0.03]
+
+    vaccineAcceptance:
+      probabilityTrue: 0.75
 
 infectionRiskMultipliers:
   age:
-    0-17: 0.75
-    18-49: 1.0
-    50-64: 1.0
-    65+: 1.25
+    "0-17": 0.75
+    "18-49": 1.0
+    "50-64": 1.0
+    "65+": 1.25
 
   comorbidity:
     "true": 1.25
@@ -35,7 +59,7 @@ infectionRiskMultipliers:
     rural: 1.0
 
   mobility:
-    independent: 1.25
+    independent: 1.0
     assisted: 1.0
     immobile: 0.75
 

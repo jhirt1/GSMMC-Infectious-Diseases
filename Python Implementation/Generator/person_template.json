@@ -21,7 +21,8 @@
       "properties": {
         "guid": {
           "type": "string",
-          "description": "Unique identifier for the individual."
+          "description": "Unique identifier for the individual.",
+          "format": "uuid"
         },
         "age": {
           "type": "string",
@@ -56,14 +57,16 @@
     },
     "dynamic": {
       "type": "object",
-      "description": "Dynamic health and vaccination status variables that may change over time.",
+      "description": "Dynamic health, vaccination, infection, recovery, and location variables that may change over time.",
       "required": [
         "vaccineStatus",
         "proactiveVaccine",
         "numberOfInfections",
         "sirvStatus",
         "infectedDays",
-        "vaccinatedDays"
+        "vaccinatedDays",
+        "recoveredDays",
+        "currentLocation"
       ],
       "properties": {
         "vaccineStatus": {
@@ -98,6 +101,22 @@
           "type": "integer",
           "description": "Number of days since the individual recovered from infection.",
           "minimum": 0
+        },
+        "currentLocation": {
+          "type": "object",
+          "description": "Current x and y coordinate location of the individual.",
+          "required": ["xcor", "ycor"],
+          "properties": {
+            "xcor": {
+              "type": "number",
+              "description": "Current x-coordinate location of the individual."
+            },
+            "ycor": {
+              "type": "number",
+              "description": "Current y-coordinate location of the individual."
+            }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false
