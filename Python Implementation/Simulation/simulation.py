@@ -26,7 +26,7 @@ def update_disease_counters(df: pd.DataFrame) -> pd.DataFrame:
 def run_sirv_simulation(n_runs: int, m_steps: int):
 
     config = generator.read_config("../Config/config_sample.yml")
-    df = generator.intialization()
+    df_init = generator.intialization()
 
     all_runs = []
     
@@ -44,7 +44,9 @@ def run_sirv_simulation(n_runs: int, m_steps: int):
                 "R": (df["dynamic.sirvStatus"] == "R").sum(),
                 "V": (df["dynamic.sirvStatus"] == "V").sum(),
             }]
-       
+           
+        df = df_init
+
         for t in range(m_steps):
             # movement
             df = generator.jiggle_positions(
