@@ -100,7 +100,42 @@ def recovered_to_susceptible(df: pd.DataFrame, sd: int) -> pd.DataFrame:
     result.loc[recovered_mask & susceptible_mask, "dynamic.recoveredDays"] = 0
     return result
 
-def susceptible_to_vaccinated(df: pd.DataFrame, base_prob: float = 0.005, rng=None) -> pd.DataFrame:
+# def susceptible_to_vaccinated(df: pd.DataFrame, base_prob: float = 0.005, rng=None) -> pd.DataFrame:
+#     '''
+#     Converts susceptible individuals to vaccinated based on demographic and behavioural multipliers.
+#     '''
+#     result = df.copy()
+
+#     susceptible_mask = result['dynamic.sirvStatus'] == 'S'
+#     susceptible_positions = np.where(susceptible_mask.values)[0]
+
+#     if len(susceptible_positions) == 0:
+#         return result
+
+#     sus = result.iloc[susceptible_positions]
+
+#     prob = (
+#         base_prob
+#         * sus['static.ageRiskMultiplier']
+#         * sus['static.comorbidityRiskMultiplier']
+#         * sus['static.socialActivityRiskMultiplier']
+#         * sus['static.geographyRiskMultiplier']
+#         * sus['static.mobilityRiskMultiplier']
+#         * sus['static.vaccineAcceptanceRiskMultiplier']
+#     ).clip(0, 1).values
+
+#     if rng is None:
+#         rng = np.random.default_rng()
+
+#     newly_vaccinated = rng.random(len(susceptible_positions)) < prob
+
+#     newly_vaccinated_idx = result.index[susceptible_positions[newly_vaccinated]]
+#     result.loc[newly_vaccinated_idx, "dynamic.sirvStatus"] = "V"
+#     result.loc[newly_vaccinated_idx, "dynamic.vaccinatedDays"] = 0
+
+#     return result
+
+def susceptible_to_vaccinated(df: pd.DataFrame, target_fraction: float = 0.57, n_days: int = 180, rng=None) -> pd.DataFrame:
     '''
     Converts susceptible individuals to vaccinated based on demographic and behavioural multipliers.
     '''
@@ -114,14 +149,14 @@ def susceptible_to_vaccinated(df: pd.DataFrame, base_prob: float = 0.005, rng=No
 
     sus = result.iloc[susceptible_positions]
 
-    prob = (
-        base_prob
-        * sus['static.ageRiskMultiplier']
+    prob = (1 -
+        sus['static.ageRiskMultiplier']
         * sus['static.comorbidityRiskMultiplier']
         * sus['static.socialActivityRiskMultiplier']
         * sus['static.geographyRiskMultiplier']
         * sus['static.mobilityRiskMultiplier']
         * sus['static.vaccineAcceptanceRiskMultiplier']
+        * (1-target_fraction)**(1/n_days)
     ).clip(0, 1).values
 
     if rng is None:
