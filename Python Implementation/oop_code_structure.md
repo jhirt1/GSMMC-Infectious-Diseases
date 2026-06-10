@@ -181,3 +181,5 @@ Table 2.
 | dynamic.currentLocation.xcor | Current x-coordinate location of the individual. |
 | dynamic.currentLocation.ycor | Current y-coordinate location of the individual. |
 
+#### Simulation Output
+The Simulatino will output 
