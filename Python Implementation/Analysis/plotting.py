@@ -11,16 +11,34 @@ def plot_sirv_onehot(df: pd.DataFrame,
     '''
     Alternate plotting code for one-hot encoded SIRV status.
     '''
-    df_mean = df.groupby(time_col).mean().reset_index()
+    df_sorted = df.copy().sort_values(by=time_col)
+
+    
     status_cols = ['S', 'I', 'R', 'V']
+    # Use the agg function to count mean number of each status per time point
+    agg_df = df_sorted.groupby(time_col)[status_cols].sum().reset_index()
     plt.figure(figsize=(12, 6))
     for status in status_cols:
-        plt.plot(df_mean['t'], df_mean[status], label=status)
+        plt.plot(agg_df[time_col], agg_df[status], label=status)
     plt.xlabel('Time')
     plt.ylabel('Count')
     plt.title('SIRV Model Simulation')
     plt.legend()
     plt.show()
+
+def plot_sirv_onehot_by_facet(df: pd.DataFrame,
+                            facet_col: str,
+                            title: str = 'SIRV Model Simulation by Facet',
+                            id_col: str = 'static.guid',
+                            time_col: str = 't') -> None:
+    '''
+    Plots the one-hot encoded SIRV status of individuals over time, faceted by a specified column.
+    '''
+    df_sorted = df.copy().sort_values(by=time_col)
+    facets, n_facets = df_sorted[facet_col].unique(), df_sorted[facet_col].nunique()
+    for i, facet in enumerate(facets):
+        facet_df = df_sorted[df_sorted[facet_col] == facet]
+        plot_sirv_onehot(facet_df, title=f'{title} - {facet}', id_col=id_col, time_col=time_col)
 
 def plot_sirv(df: pd.DataFrame,
             title: str = 'SIRV Status Over Time',
@@ -56,13 +74,9 @@ def plot_sirv_by_facet(df: pd.DataFrame,
     '''
     Plots the SIRV status of individuals over time, faceted by a specified column.
     '''
-    # Ensure the DataFrame is sorted by time
-    df_sorted = df.copy().sort_values(by=time_col)
-
-    # Create a pivot table to count the number of individuals in each SIRV status at each time step and facet
-    pivot_df = df_sorted.pivot_table(index=[time_col, facet_col], columns=status_col, aggfunc='size', fill_value=0).reset_index()
-    facets, n_facets = df_sorted[facet_col].unique(), df_sorted[facet_col].nunique()
-    # Plotting with seaborn
+    df_copy = df.copy()
+    facets, n_facets = df_copy[facet_col].unique(), df_copy[facet_col].nunique()
+    # Plotting
     for i, facet in enumerate(facets):
-        facet_df = df_sorted[df_sorted[facet_col] == facet]
+        facet_df = df_copy[df_copy[facet_col] == facet]
         plot_sirv(facet_df, title=f'{title} - {facet}', id_col=id_col, status_col=status_col, time_col=time_col)
