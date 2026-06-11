@@ -3,6 +3,25 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+def plot_sirv_onehot(df: pd.DataFrame,
+            title: str = 'SIRV Status Over Time',
+            id_col: str = 'static.guid',
+            run_col: str = 'run',
+            time_col: str = 't') -> None:
+    '''
+    Alternate plotting code for one-hot encoded SIRV status.
+    '''
+    df_mean = df.groupby(time_col).mean().reset_index()
+    status_cols = ['S', 'I', 'R', 'V']
+    plt.figure(figsize=(12, 6))
+    for status in status_cols:
+        plt.plot(df_mean['t'], df_mean[status], label=status)
+    plt.xlabel('Time')
+    plt.ylabel('Count')
+    plt.title('SIRV Model Simulation')
+    plt.legend()
+    plt.show()
+
 def plot_sirv(df: pd.DataFrame,
             title: str = 'SIRV Status Over Time',
             id_col: str = 'static.guid',
