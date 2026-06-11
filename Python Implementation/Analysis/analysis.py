@@ -227,7 +227,9 @@ def run_simulation(df_init: pd.DataFrame, cfg: dict, sig: float = DEFAULT_SIG) -
     Local copy of simulation.run_sirv_simulation()'s loop, parameterised by an
     in-memory `cfg` and the movement step `sig`. Each step: jiggle -> the five
     reactions in order -> increment counters -> snapshot S/I/R/V. Returns the
-    same long (run, t, S, I, R, V) DataFrame that stats.py / plotting.py consume.
+    RAW per-run long (run, t, S, I, R, V) DataFrame -- nSim rows per timestep,
+    preserving between-run variance. Pass it through `average_runs` for the
+    population-level averaged epidemic curve.
     """
     n_runs = cfg["nSim"]
     m_steps = cfg["tSpan"]
@@ -256,6 +258,20 @@ def run_simulation(df_init: pd.DataFrame, cfg: dict, sig: float = DEFAULT_SIG) -
     return pd.DataFrame(all_runs)
 
 
+def average_runs(sim_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Population-level average over runs: mean S/I/R/V per timestep across the
+    nSim runs. Returns one row per `t` with columns (t, S, I, R, V).
+
+    This is the count-level equivalent of simulation_avg.ipynb's "divide SIRV
+    counts by n_runs" -- the mean over the nSim run rows at each t. Column names
+    are kept as S/I/R/V so stats.py and plotting.py consume the result unchanged.
+    """
+    return (sim_df.groupby("t")[["S", "I", "R", "V"]]
+            .mean()
+            .reset_index())
+
+
 ##########################################
 #         EXPERIMENT HARNESS             #
 ##########################################
@@ -270,21 +286,26 @@ def run_single(overrides: dict | None = None, sig: float = DEFAULT_SIG,
     """
     Generate one population from `overrides`, simulate it, and compute metrics.
 
-    Returns {"df", "cfg", "sig", "r0", "re_series", "re_peak"}. NOTE: `re_peak`
-    is the raw max of the renewal-equation Re, which is noisy -- it is dominated
-    by the sharp spike at epidemic takeoff (the first value after the rcd-day
-    burn-in, divided by a near-zero prior-window mean). Treat it as indicative.
+    Returns {"df", "df_avg", "cfg", "sig", "r0", "re_series", "re_peak"} where
+    `df` is the raw per-run frame and `df_avg` is the population-level run
+    average (mean S/I/R/V per t). Metrics are computed on `df_avg`. NOTE:
+    `re_peak` is the raw max of the renewal-equation Re, which is noisy -- it is
+    dominated by the sharp spike at epidemic takeoff (the first value after the
+    rcd-day burn-in, divided by a near-zero prior-window mean). Treat it as
+    indicative.
     """
     cfg = build_config(overrides)
     df_init = generate_population(cfg, seed=seed)
     sim_df = run_simulation(df_init, cfg, sig=sig)
+    df_avg = average_runs(sim_df)
 
-    r0 = stats.calculate_r0(sim_df, rcd=cfg["rcd"])
-    re_series = stats.calculate_re(sim_df, rcd=cfg["rcd"], ved=cfg["ved"])
+    r0 = stats.calculate_r0(df_avg, rcd=cfg["rcd"])
+    re_series = stats.calculate_re(df_avg, rcd=cfg["rcd"], ved=cfg["ved"])
     re_peak = float(np.nanmax(re_series["Re"].to_numpy())) if len(re_series) else np.nan
 
     return {
         "df": sim_df,
+        "df_avg": df_avg,
         "cfg": cfg,
         "sig": sig,
         "r0": float(r0),
@@ -366,7 +387,8 @@ def plot_sweep(results: dict, param_label: str, plot_curves: bool = False) -> No
 
     if plot_curves:
         for k in keys:
-            plotting.plot_sirv_onehot(results[k]["df"], title=f"SIRV -- {param_label} = {k}")
+            # Use the run-averaged curve so the y-axis is on population scale.
+            plotting.plot_sirv_onehot(results[k]["df_avg"], title=f"SIRV -- {param_label} = {k}")
 
 
 ##########################################

@@ -137,9 +137,17 @@ each of `cfg["tSpan"]` daily steps it:
    side-effect-free function, so there is no reason to duplicate it.
 4. `_snapshot` — record `(run, t, S, I, R, V)` for that step.
 
-It returns the **long DataFrame** with columns `run, t, S, I, R, V` — the exact
-shape [`stats.py`](stats.py) and [`plotting.py`](plotting.py) already consume, so
-those modules work without modification.
+It returns the **raw per-run long DataFrame** with columns `run, t, S, I, R, V`
+(`nSim` rows per timestep, preserving between-run variance) — the exact shape
+[`stats.py`](stats.py) and [`plotting.py`](plotting.py) already consume.
+
+### `average_runs(sim_df)` — population-level run average
+`run_simulation` keeps the **raw** per-run data; this helper produces the
+**averaged epidemic curve** — `sim_df.groupby("t")[["S","I","R","V"]].mean()`,
+one row per `t`. This is the count-level equivalent of
+[`simulation_avg.ipynb`](../Simulation/simulation_avg.ipynb)'s "divide SIRV
+counts by `n_runs`": the mean over the `nSim` run rows at each timestep. Column
+names stay `S/I/R/V`, so `stats.py` and `plotting.py` consume it unchanged.
 
 > **Reused, not reimplemented.** The reactions, the stats estimators, and
 > `simulation.update_disease_counters` are the originals. `analysis.py` only
@@ -153,12 +161,19 @@ those modules work without modification.
 
 ### `run_single(overrides, sig, seed)`
 The atomic experiment: `build_config` → `generate_population` → `run_simulation`
-→ compute metrics. Returns a dict:
+→ `average_runs` → compute metrics. **R₀ and Rₑ are computed on the run-averaged
+curve** (`df_avg`). Returns a dict:
 
 ```python
-{"df": <long SIRV frame>, "cfg": <resolved config>, "sig": <movement std>,
+{"df": <raw per-run SIRV frame>, "df_avg": <run-averaged SIRV curve>,
+ "cfg": <resolved config>, "sig": <movement std>,
  "r0": <float>, "re_series": <DataFrame t/incidence/Re>, "re_peak": <float>}
 ```
+
+> Because `calculate_r0`/`calculate_re` are scale-invariant (slope of log /
+> ratio of incidences), the metrics are identical whether computed on the raw
+> or averaged frame; computing on `df_avg` just makes the "averaged over runs"
+> intent explicit.
 
 ### `run_experiment(param, values, base_overrides, sig, seed)`
 Sweeps one attribute across `values`, calling `run_single` per value and
@@ -194,13 +209,16 @@ Two summary panels across the swept values:
 - **Free-growth R₀ vs the swept value** (red).
 - **Peak Rₑ vs the swept value** (blue).
 
-With `plot_curves=True` it also overlays the **SIRV trajectories** for each value
-via `plotting.plot_sirv_onehot`. Scalar sweeps (rho, sig, probabilities) plot on a
-numeric x-axis; list sweeps (age weights) plot on indexed categorical ticks.
+With `plot_curves=True` it also overlays the **run-averaged SIRV trajectories**
+(`df_avg`) for each value via `plotting.plot_sirv_onehot`, so the y-axis is on
+population scale (≈ `populationSize`), not `nSim`×. Scalar sweeps (rho, sig,
+probabilities) plot on a numeric x-axis; list sweeps (age weights) plot on
+indexed categorical ticks.
 
 ### Programmatic output
 Every `run_*` returns plain dicts/DataFrames, so a notebook can post-process:
-the long SIRV frame per run, the resolved config, R₀, and the full `Re(t)` series.
+the raw per-run frame (`df`, for variance/confidence bands), the run-averaged
+curve (`df_avg`), the resolved config, R₀, and the full `Re(t)` series.
 
 ### Demo entry point
 `python analysis.py` (run **from `Analysis/`**) executes a small, fast density
