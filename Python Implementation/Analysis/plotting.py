@@ -22,13 +22,12 @@ def plot_sirv_onehot(df: pd.DataFrame,
         plt.plot(agg_df[time_col], agg_df[status], label=status)
     plt.xlabel('Time')
     plt.ylabel('Count')
-    plt.title('SIRV Model Simulation')
+    plt.title(title)
     plt.legend()
     plt.show()
 
 def plot_sirv_onehot_by_facet(df: pd.DataFrame,
                             facet_col: str,
-                            title: str = 'SIRV Model Simulation by Facet',
                             id_col: str = 'static.guid',
                             time_col: str = 't') -> None:
     '''
@@ -38,7 +37,7 @@ def plot_sirv_onehot_by_facet(df: pd.DataFrame,
     facets, n_facets = df_sorted[facet_col].unique(), df_sorted[facet_col].nunique()
     for i, facet in enumerate(facets):
         facet_df = df_sorted[df_sorted[facet_col] == facet]
-        plot_sirv_onehot(facet_df, title=f'{title} - {facet}', id_col=id_col, time_col=time_col)
+        plot_sirv_onehot(facet_df, title= f'SIRV - {facet}', id_col=id_col, time_col=time_col)
 
 def plot_sirv(df: pd.DataFrame,
             title: str = 'SIRV Status Over Time',
