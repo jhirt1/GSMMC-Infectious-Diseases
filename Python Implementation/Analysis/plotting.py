@@ -37,7 +37,7 @@ def plot_sirv_onehot_by_facet(df: pd.DataFrame,
     facets, n_facets = df_sorted[facet_col].unique(), df_sorted[facet_col].nunique()
     for i, facet in enumerate(facets):
         facet_df = df_sorted[df_sorted[facet_col] == facet]
-        plot_sirv_onehot(facet_df, title= f'SIRV - {facet}', id_col=id_col, time_col=time_col)
+        plot_sirv_onehot(facet_df, title= f'SIRV by Facet - {facet}', id_col=id_col, time_col=time_col)
 
 def plot_sirv(df: pd.DataFrame,
             title: str = 'SIRV Status Over Time',
