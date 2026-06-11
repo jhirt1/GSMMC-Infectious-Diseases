@@ -36,7 +36,7 @@ def run_sirv_simulation(n_runs: int, m_steps: int):
 
         rng = np.random.default_rng(config["seed"] + run_id)
 
-        df = df_init
+        df = df_init.copy()
 
         run_history = [{
                 "run": run_id,
