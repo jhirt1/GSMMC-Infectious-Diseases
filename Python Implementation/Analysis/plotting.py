@@ -11,11 +11,15 @@ def plot_sirv_onehot(df: pd.DataFrame,
     '''
     Alternate plotting code for one-hot encoded SIRV status.
     '''
-    df_mean = df.groupby(time_col).mean().reset_index()
+    df_sorted = df.copy().sort_values(by=time_col)
+
+    
     status_cols = ['S', 'I', 'R', 'V']
+    # Use the agg function to count mean number of each status per time point
+    agg_df = df_sorted.groupby(time_col)[status_cols].sum().reset_index()
     plt.figure(figsize=(12, 6))
     for status in status_cols:
-        plt.plot(df_mean['t'], df_mean[status], label=status)
+        plt.plot(agg_df[time_col], agg_df[status], label=status)
     plt.xlabel('Time')
     plt.ylabel('Count')
     plt.title('SIRV Model Simulation')
