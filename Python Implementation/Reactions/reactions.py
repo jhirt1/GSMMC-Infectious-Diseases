@@ -42,12 +42,12 @@ def infection_probability(df: pd.DataFrame, sig2: float) -> np.ndarray:
 
     xj = df.loc[infected_idx, 'dynamic.currentLocation.xcor'].values
     yj = df.loc[infected_idx, 'dynamic.currentLocation.ycor'].values
-    aRM = df.loc[infected_idx, 'static.ageRiskMultiplier'].values
-    cRM = df.loc[infected_idx, 'static.comorbidityRiskMultiplier'].values
-    saRM = df.loc[infected_idx, 'static.socialActivityRiskMultiplier'].values
-    gRM = df.loc[infected_idx, 'static.geographyRiskMultiplier'].values
-    mRM = df.loc[infected_idx, 'static.mobilityRiskMultiplier'].values
-    vaRM = df.loc[infected_idx, 'static.vaccineAcceptanceRiskMultiplier'].values
+    aRM = df.loc[susceptible_idx, 'static.ageRiskMultiplier'].values
+    cRM = df.loc[susceptible_idx, 'static.comorbidityRiskMultiplier'].values
+    saRM = df.loc[susceptible_idx, 'static.socialActivityRiskMultiplier'].values
+    gRM = df.loc[susceptible_idx, 'static.geographyRiskMultiplier'].values
+    mRM = df.loc[susceptible_idx, 'static.mobilityRiskMultiplier'].values
+    vaRM = df.loc[susceptible_idx, 'static.vaccineAcceptanceRiskMultiplier'].values
 
     # Pairwise distances: shape (n_susceptible, n_infected)
     dx = xi[:, None] - xj[None, :]
@@ -55,7 +55,7 @@ def infection_probability(df: pd.DataFrame, sig2: float) -> np.ndarray:
     rij2 = dx**2 + dy**2
 
     # Sum infectivity contributions for each susceptible individual
-    pi = (aRM[None, :] * cRM[None, :] * saRM[None, :] * gRM[None, :] * mRM[None, :] * vaRM[None, :] * np.exp(-rij2 / tsig2)).sum(axis=1)
+    pi = (aRM[:, None] * cRM[:, None] * saRM[:, None] * gRM[:, None] * mRM[:, None] * vaRM[:, None] * np.exp(-rij2 / tsig2)).sum(axis=1)
 
     pi_full[susceptible_mask.values] = pi
     return pi_full
