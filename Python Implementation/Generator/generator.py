@@ -222,7 +222,8 @@ def update_positions(x, y, L, sig2, rng):
     """
 
     N = len(x)
-    sig = np.sqrt(sig2)
+    #sig = np.sqrt(sig2)
+    sig = 4
 
     dx = rng.normal(loc=0, scale=sig, size=N)
     dy = rng.normal(loc=0, scale=sig, size=N)
@@ -248,6 +249,7 @@ def jiggle_positions(df, rho, sig2, rng):
 
     N = len(df)
     L = np.sqrt(N / rho)
+    print(N, L, sig2)
 
     x, y = update_positions(
         x=x,
