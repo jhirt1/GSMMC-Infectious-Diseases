@@ -149,7 +149,8 @@ def susceptible_to_vaccinated(df: pd.DataFrame, target_fraction: float = 0.57, n
 
     sus = result.iloc[susceptible_positions]
     w = sus['static.ageRiskMultiplier'] * sus['static.comorbidityRiskMultiplier'] * sus['static.socialActivityRiskMultiplier'] * sus['static.geographyRiskMultiplier'] * sus['static.mobilityRiskMultiplier'] * sus['static.vaccineAcceptanceRiskMultiplier']
-    prob = (1 - w* (1-target_fraction)**(1/n_days)).clip(0, 1).values
+    # prob = (1 - w* (1-target_fraction)**(1/n_days)).clip(0, 1).values
+    prob = w*np.random.poisson(0.008,len(susceptible_positions)).clip(0,1)
 
     if rng is None:
         rng = np.random.default_rng()
