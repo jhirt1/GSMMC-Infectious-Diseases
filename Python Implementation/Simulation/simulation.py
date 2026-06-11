@@ -23,10 +23,13 @@ def update_disease_counters(df: pd.DataFrame) -> pd.DataFrame:
 
 
 # SIMULATION
-def run_sirv_simulation(n_runs: int, m_steps: int):
+def run_sirv_simulation():
 
     config = generator.read_config("../Config/config_sample.yml")
     df_init = generator.intialization()
+    
+    n_runs = config["nSim"]
+    m_steps = config["tSpan"]
 
     all_runs = []
     
