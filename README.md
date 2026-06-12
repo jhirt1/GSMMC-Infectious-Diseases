@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20659487.svg)](https://doi.org/10.5281/zenodo.20659487)
+
 Objected Oriented Software for kinetic Monte Carlo (kMC) Simulation for Modeling Coronavirus Spread
 -----
 This file documents the planned high-level structure of the Objected Oriented Programming implementation of a kinetic Monte Carlo model for modeling the spread of coronavirus. This portion of the project builds on existing SIR, SIRV, and other kinetic Monte Carlo Models, with the ultimate goal of exploring how a flexible formulation of state allows us to explore tiered levels of complexity. 
@@ -190,12 +192,30 @@ Table 2.
 
 If you use this software in academic work, please cite:
 
-
+Babou, T., Capece, J., Gideon, U., Hirt, J., Le, J., Tamanna, T., Yang, H., Youn, S., & Yu, X. (2026). Software for kinetic Monte Carlo (kMC) Simulation for Modeling Coronavirus Spread (v1.0.0). Zenodo. https://doi.org/10.5281/zenodo.20659487
 
 ### BibTeX
 
 ```bibtex
-@software{
+@misc{babou_2026_20659487,
+  author       = {Babou, Talla and
+                  Capece, Julianna and
+                  Gideon, Uzochi and
+                  Hirt, Juliana and
+                  Le, Justin and
+                  Tamanna, Tamanna and
+                  Yang, Haoru and
+                  Youn, SangEun and
+                  Yu, Xinyue},
+  title        = {Software for kinetic Monte Carlo (kMC) Simulation
+                   for Modeling Coronavirus Spread
+                  },
+  month        = jun,
+  year         = 2026,
+  publisher    = {Zenodo},
+  version      = {v1.0.0},
+  doi          = {10.5281/zenodo.20659487},
+  url          = {https://doi.org/10.5281/zenodo.20659487},
 }
 ```
 
