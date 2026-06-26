@@ -114,17 +114,18 @@ The domain side length is `L = sqrt(N / rho)`, so **`rho` controls density** —
 smaller `L` packs agents closer, raising contact rates. Positions wrap with
 periodic boundaries (`np.mod`).
 
-### `run_simulation(df_init, cfg, sig)` — the daily loop
-A local copy of the loop in `simulation.run_sirv_simulation()`, but parameterised
-by the in-memory `cfg` and `sig` instead of re-reading the YAML. For each of
-`cfg["nSim"]` runs it reseeds an RNG (`seed + run_id`), copies `df_init`, then for
-each of `cfg["tSpan"]` daily steps it:
+### `run_simulation(df_init, cfg, sig, n_jobs=None)` — the parallel daily loop
+A local copy of the loop in `simulation.run_sirv_simulation()`, parameterised by
+the in-memory `cfg` and `sig` instead of re-reading the YAML. Because the `nSim`
+runs are independent, they are **distributed across processes** with a
+`ProcessPoolExecutor`. The worker `_simulate_one_run(run_id)` builds its own
+`rng = default_rng(seed + run_id)`, copies `df_init`, then for each of
+`cfg["tSpan"]` daily steps it:
 
-1. `local_jiggle` — move everyone one Brownian step.
-2. The **five reactions in order**, unchanged from
-   [`reactions.py`](../Reactions/reactions.py):
-   - `susceptible_to_infected(df, cfg["sig2"])` — distance-weighted Gaussian
-     infection kernel.
+1. `local_jiggle(df, cfg["rho"], sig, rng)` — move everyone one Brownian step.
+2. The **five reactions in order**, from [`reactions.py`](../Reactions/reactions.py):
+   - `susceptible_to_infected(df, cfg["sig2"], rng=rng)` — distance-weighted
+     Gaussian infection kernel.
    - `infected_to_recovered(df, cfg["rcd"])` — deterministic recovery after `rcd`
      days.
    - `recovered_to_susceptible(df, cfg["sd"])` — waning immunity after `sd` days.
@@ -136,6 +137,15 @@ each of `cfg["tSpan"]` daily steps it:
    [`Simulation/simulation.py`](../Simulation/simulation.py#L15) — it is a pure,
    side-effect-free function, so there is no reason to duplicate it.
 4. `_snapshot` — record `(run, t, S, I, R, V)` for that step.
+
+**Parallelism details.** `n_jobs` controls the worker count: `None` → all CPU
+cores, `1` → serial (no pool overhead). Each run is driven *entirely* by its own
+`rng` — both `local_jiggle` and the two stochastic reactions now take `rng=rng`
+(see §8) — so the output is **identical for any `n_jobs`** and **reproducible
+across calls**, independent of execution order. The pool uses an `initializer`
+to ship the read-only `df_init`/`cfg`/`sig` once per worker; `stats`/`plotting`/
+`matplotlib` are imported lazily (not at module top) so spawned workers don't pay
+to import the scipy/seaborn stack they never use.
 
 It returns the **raw per-run long DataFrame** with columns `run, t, S, I, R, V`
 (`nSim` rows per timestep, preserving between-run variance) — the exact shape
@@ -250,25 +260,31 @@ analysis.plot_sweep(mv, "movement std (sig)")
 
 Expected directions (sanity checks): denser populations (higher `rho`) and more
 mixing (higher `sig`) raise **R₀**; higher vaccine acceptance lowers sustained
-transmission.
+transmission. To control parallelism, pass `n_jobs` through any sweep, e.g.
+`analysis.sweep_density([...], n_jobs=4)` (the wrappers forward it); `n_jobs=1`
+runs serially.
 
 ---
 
-## 8. Caveats inherited from the pipeline
-
-`analysis.py` reuses the existing reactions and stats as-is, so it inherits their
-known rough edges:
+## 8. Caveats and authorized upstream fixes
 
 - **`peak Rₑ` is noisy.** The renewal-equation Rₑ has a sharp spike at epidemic
   takeoff (the first value after the `rcd`-day estimator burn-in, divided by a
   near-zero prior-window mean). The raw max is therefore dominated by that
   transient — treat it as **indicative**, and lean on R₀ and the SIRV curves for
   firm conclusions.
-- **Partial reproducibility.** `susceptible_to_infected` and
-  `susceptible_to_vaccinated` draw from the **global** `np.random` rather than the
-  seeded `rng`, so those specific transitions are not reproducible from `seed`
-  even though generation and movement are.
-- **One authorized upstream fix.** `reactions.infection_probability` was corrected
-  so the risk multipliers broadcast over the **susceptible** target
-  (`[:, None]`) — required for the kernel to run at all after the multipliers were
-  switched to index susceptibles. This is the only change outside `Analysis/`.
+- **Simulation is now reproducible (authorized reactions fix).** Previously
+  `susceptible_to_infected` and `susceptible_to_vaccinated` drew from the
+  **global** `np.random`, so those transitions were not reproducible from `seed`
+  and would have produced **correlated/duplicated runs** under multiprocessing.
+  Both now accept an explicit `rng` (with a `rng=None` fallback to the old global
+  behavior, so `simulation.py` is unaffected); `analysis.py` passes the per-run
+  `rng`. As a result the parallel `run_simulation` output is identical for any
+  `n_jobs` and reproducible across calls.
+- **Infection-kernel broadcast fix.** `reactions.infection_probability` was
+  corrected so the risk multipliers broadcast over the **susceptible** target
+  (`[:, None]`) — required for the kernel to run after the multipliers were
+  switched to index susceptibles.
+
+These reactions changes are the only edits outside `Analysis/`, all explicitly
+authorized, and all backward-compatible with `simulation.py`.
