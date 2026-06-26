@@ -33,10 +33,10 @@
 import copy
 import sys
 import os
+from concurrent.futures import ProcessPoolExecutor
 
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 
 # Same sys.path idiom as Simulation/simulation.py so the sibling packages import.
 sys.path.append(os.path.abspath("../Generator"))
@@ -46,8 +46,13 @@ sys.path.append(os.path.abspath("../Simulation"))
 import generator    # noqa: E402  (path hack must precede import)
 import reactions    # noqa: E402
 import simulation   # noqa: E402  (reused for update_disease_counters)
-import stats         # noqa: E402  (sibling module in Analysis/)
-import plotting      # noqa: E402  (sibling module in Analysis/)
+
+# NOTE: `stats`, `plotting`, and `matplotlib` are imported LAZILY inside the
+# functions that need them (run_single / plot_sweep), NOT at module top level.
+# Reason: parallel worker processes re-import this module on spawn, but only run
+# `_simulate_one_run` (which needs generator/reactions/simulation). Keeping the
+# heavy scipy/seaborn/matplotlib stack out of the import path makes worker
+# startup much cheaper and improves the parallel speedup.
 
 
 ##########################################
@@ -220,39 +225,88 @@ def _snapshot(df: pd.DataFrame, run_id: int, t: int) -> dict:
     }
 
 
-def run_simulation(df_init: pd.DataFrame, cfg: dict, sig: float = DEFAULT_SIG) -> pd.DataFrame:
-    """
-    Run nSim epochs of tSpan daily steps on a fixed initial population.
+# Read-only inputs shared with worker processes. Set once per worker via the
+# pool initializer so `df_init` is pickled once per worker, not once per run.
+_WORKER_STATE = {}
 
-    Local copy of simulation.run_sirv_simulation()'s loop, parameterised by an
-    in-memory `cfg` and the movement step `sig`. Each step: jiggle -> the five
-    reactions in order -> increment counters -> snapshot S/I/R/V. Returns the
-    RAW per-run long (run, t, S, I, R, V) DataFrame -- nSim rows per timestep,
-    preserving between-run variance. Pass it through `average_runs` for the
-    population-level averaged epidemic curve.
+
+def _init_worker(df_init: pd.DataFrame, cfg: dict, sig: float) -> None:
+    """ProcessPoolExecutor initializer: stash the shared, read-only run inputs."""
+    _WORKER_STATE["df_init"] = df_init
+    _WORKER_STATE["cfg"] = cfg
+    _WORKER_STATE["sig"] = sig
+
+
+def _simulate_one_run(run_id: int) -> list[dict]:
+    """
+    Simulate a single independent epoch and return its per-step snapshot history.
+
+    Each run is fully determined by its own `rng = default_rng(seed + run_id)`:
+    `local_jiggle` and both stochastic reactions take this generator, so runs are
+    independent across worker processes AND reproducible regardless of execution
+    order or worker count. This is a top-level function so it is picklable by the
+    `spawn` start method (importable as `analysis._simulate_one_run`).
+    """
+    df_init = _WORKER_STATE["df_init"]
+    cfg = _WORKER_STATE["cfg"]
+    sig = _WORKER_STATE["sig"]
+
+    rng = np.random.default_rng(cfg["seed"] + run_id)
+    df = df_init.copy()
+
+    history = [_snapshot(df, run_id, 0)]
+
+    for t in range(cfg["tSpan"]):
+        df = local_jiggle(df, cfg["rho"], sig, rng)
+
+        df = reactions.susceptible_to_infected(df, cfg["sig2"], rng=rng)
+        df = reactions.infected_to_recovered(df, cfg["rcd"])
+        df = reactions.recovered_to_susceptible(df, cfg["sd"])
+        df = reactions.vaccinated_to_susceptible(df, cfg["ved"])
+        df = reactions.susceptible_to_vaccinated(df, rng=rng)
+
+        df = simulation.update_disease_counters(df)
+        history.append(_snapshot(df, run_id, t + 1))
+
+    return history
+
+
+def run_simulation(df_init: pd.DataFrame, cfg: dict, sig: float = DEFAULT_SIG,
+                   n_jobs: int | None = None) -> pd.DataFrame:
+    """
+    Run nSim epochs of tSpan daily steps on a fixed initial population, in parallel.
+
+    Parameterised local equivalent of simulation.run_sirv_simulation()'s loop. The
+    nSim runs are independent (each driven by its own seeded `rng`), so they are
+    distributed across processes with a ProcessPoolExecutor. `n_jobs` controls the
+    worker count: None -> all CPU cores; 1 -> serial (no pool overhead). Because
+    every run is determined solely by `seed + run_id`, the output is identical for
+    any `n_jobs` and reproducible across calls.
+
+    Returns the RAW per-run long (run, t, S, I, R, V) DataFrame -- nSim rows per
+    timestep, preserving between-run variance. Pass it through `average_runs` for
+    the population-level averaged epidemic curve.
     """
     n_runs = cfg["nSim"]
-    m_steps = cfg["tSpan"]
+
+    workers = (os.cpu_count() or 1) if n_jobs is None else n_jobs
+    workers = max(1, min(workers, n_runs))
+
+    if workers == 1:
+        # Serial path: no process overhead, easy to debug.
+        _init_worker(df_init, cfg, sig)
+        histories = [_simulate_one_run(run_id) for run_id in range(n_runs)]
+    else:
+        with ProcessPoolExecutor(
+            max_workers=workers,
+            initializer=_init_worker,
+            initargs=(df_init, cfg, sig),
+        ) as ex:
+            # ex.map preserves input order, so the result is deterministic.
+            histories = list(ex.map(_simulate_one_run, range(n_runs)))
 
     all_runs = []
-    for run_id in range(n_runs):
-        rng = np.random.default_rng(cfg["seed"] + run_id)
-        df = df_init.copy()
-
-        history = [_snapshot(df, run_id, 0)]
-
-        for t in range(m_steps):
-            df = local_jiggle(df, cfg["rho"], sig, rng)
-
-            df = reactions.susceptible_to_infected(df, cfg["sig2"])
-            df = reactions.infected_to_recovered(df, cfg["rcd"])
-            df = reactions.recovered_to_susceptible(df, cfg["sd"])
-            df = reactions.vaccinated_to_susceptible(df, cfg["ved"])
-            df = reactions.susceptible_to_vaccinated(df, rng=rng)
-
-            df = simulation.update_disease_counters(df)
-            history.append(_snapshot(df, run_id, t + 1))
-
+    for history in histories:
         all_runs.extend(history)
 
     return pd.DataFrame(all_runs)
@@ -282,9 +336,11 @@ MOVEMENT_PARAM = "movement.sig"
 
 
 def run_single(overrides: dict | None = None, sig: float = DEFAULT_SIG,
-               seed: int | None = None) -> dict:
+               seed: int | None = None, n_jobs: int | None = None) -> dict:
     """
     Generate one population from `overrides`, simulate it, and compute metrics.
+
+    `n_jobs` is forwarded to run_simulation (None -> all cores, 1 -> serial).
 
     Returns {"df", "df_avg", "cfg", "sig", "r0", "re_series", "re_peak"} where
     `df` is the raw per-run frame and `df_avg` is the population-level run
@@ -294,9 +350,11 @@ def run_single(overrides: dict | None = None, sig: float = DEFAULT_SIG,
     rcd-day burn-in, divided by a near-zero prior-window mean). Treat it as
     indicative.
     """
+    import stats  # lazy: keep scipy out of the parallel-worker import path
+
     cfg = build_config(overrides)
     df_init = generate_population(cfg, seed=seed)
-    sim_df = run_simulation(df_init, cfg, sig=sig)
+    sim_df = run_simulation(df_init, cfg, sig=sig, n_jobs=n_jobs)
     df_avg = average_runs(sim_df)
 
     r0 = stats.calculate_r0(df_avg, rcd=cfg["rcd"])
@@ -315,14 +373,17 @@ def run_single(overrides: dict | None = None, sig: float = DEFAULT_SIG,
 
 
 def run_experiment(param: str, values: list, base_overrides: dict | None = None,
-                   sig: float = DEFAULT_SIG, seed: int | None = None) -> dict:
+                   sig: float = DEFAULT_SIG, seed: int | None = None,
+                   n_jobs: int | None = None) -> dict:
     """
     Sweep one attribute across `values`, returning {value: run_single(...) result}.
 
     `param` is either a dotted config path (applied via build_config) or the
     special MOVEMENT_PARAM sentinel ("movement.sig"), in which case each value is
     passed as the Brownian step `sig`. `base_overrides` lets you hold other
-    attributes at a non-default setting while sweeping `param`.
+    attributes at a non-default setting while sweeping `param`. `n_jobs` is
+    forwarded to each run_single's simulation (parallelism is per-run, while the
+    sweep over `values` stays serial).
 
     NOTE: `values` for an age/social/etc. weight sweep are full weight LISTS,
     e.g. run_experiment("syntheticPopulation.static.age.weights",
@@ -338,7 +399,7 @@ def run_experiment(param: str, values: list, base_overrides: dict | None = None,
             overrides[param] = value
         # Use a hashable key (lists -> tuple) so results can be dict-keyed.
         key = tuple(value) if isinstance(value, list) else value
-        results[key] = run_single(overrides, sig=this_sig, seed=seed)
+        results[key] = run_single(overrides, sig=this_sig, seed=seed, n_jobs=n_jobs)
     return results
 
 
@@ -353,6 +414,9 @@ def plot_sweep(results: dict, param_label: str, plot_curves: bool = False) -> No
     If `plot_curves` is True, also overlay the SIRV trajectories for each value
     using the existing plotting.plot_sirv_onehot helper.
     """
+    import matplotlib.pyplot as plt  # lazy: keep matplotlib out of worker startup
+    import plotting
+
     keys = list(results.keys())
     # x-axis: use the value directly if scalar, else an index (e.g. weight lists).
     if all(isinstance(k, (int, float)) for k in keys):
