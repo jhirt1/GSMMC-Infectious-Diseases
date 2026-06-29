@@ -61,9 +61,9 @@ def run_sirv_simulation():
 
             # disease dynamic
             df = reactions.susceptible_to_infected(df, config["sig2"])
-            df = reactions.infected_to_recovered(df, config["rcd"])
-            df = reactions.recovered_to_susceptible(df, config["sd"])
-            df = reactions.vaccinated_to_susceptible(df, config["ved"])
+            df = reactions.infected_to_recovered(df, config["rcd"], rng)
+            df = reactions.recovered_to_susceptible(df, config["sd"], rng)
+            df = reactions.vaccinated_to_susceptible(df, config["ved"], rng)
             df = reactions.susceptible_to_vaccinated(df, target_fraction=0.57, n_days=180, rng=rng)
 
             # update counters

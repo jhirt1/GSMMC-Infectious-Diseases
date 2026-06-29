@@ -1,0 +1,9 @@
+# Python dependencies for the GSMMC kMC infectious-disease implementation.
+# Resolved together (conda env "gsmmc", Python 3.11) so the NumPy 2.x C ABI is
+# consistent across numpy/pandas/scipy -- avoids the "_ARRAY_API not found" crash.
+numpy==2.3.1
+pandas==2.3.1
+scipy==1.16.0
+matplotlib==3.10.0
+seaborn==0.13.2
+PyYAML==6.0.2
