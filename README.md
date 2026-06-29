@@ -213,7 +213,7 @@ Babou, T., Capece, J., Gideon, U., Hirt, J., Le, J., Tamanna, T., Yang, H., Youn
   month        = jun,
   year         = 2026,
   publisher    = {Zenodo},
-  version      = {v1.0.0},
+  version      = {v1.0.2},
   doi          = {10.5281/zenodo.20659487},
   url          = {https://doi.org/10.5281/zenodo.20659487},
 }
