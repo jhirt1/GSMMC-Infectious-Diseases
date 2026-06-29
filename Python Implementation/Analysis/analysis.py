@@ -260,9 +260,9 @@ def _simulate_one_run(run_id: int) -> list[dict]:
         df = local_jiggle(df, cfg["rho"], sig, rng)
 
         df = reactions.susceptible_to_infected(df, cfg["sig2"], rng=rng)
-        df = reactions.infected_to_recovered(df, cfg["rcd"])
-        df = reactions.recovered_to_susceptible(df, cfg["sd"])
-        df = reactions.vaccinated_to_susceptible(df, cfg["ved"])
+        df = reactions.infected_to_recovered(df, cfg["rcd"], rng=rng)
+        df = reactions.recovered_to_susceptible(df, cfg["sd"], rng=rng)
+        df = reactions.vaccinated_to_susceptible(df, cfg["ved"], rng=rng)
         df = reactions.susceptible_to_vaccinated(df, rng=rng)
 
         df = simulation.update_disease_counters(df)
